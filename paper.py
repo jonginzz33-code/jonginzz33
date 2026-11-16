@@ -9,8 +9,8 @@ from datetime import datetime, timedelta, timezone
 import config
 import db
 import upbit
-from collector import update_recent
-from strategy import Portfolio, add_indicators, want_buy, want_sell
+from collector import collect_history, update_recent
+from strategy import WARMUP, Portfolio, add_indicators, want_buy, want_sell
 
 MODE = "paper"
 KST = timezone(timedelta(hours=9))
@@ -61,15 +61,15 @@ def step(con, pf):
 
     # 새 캔들이 완성됐을 때만 매수/매도 신호 판단
     update_recent(con)
-    df = add_indicators(db.load_candles(con, limit=config.EMA_SLOW * 5))
+    df = add_indicators(db.load_candles(con, limit=WARMUP + 50))
     closed = df[df["ts"] + config.INTERVAL_MIN * 60 <= now]
-    if len(closed) >= config.EMA_SLOW * 3:
+    if len(closed) >= WARMUP:
         last = closed.iloc[-1]
         if str(int(last["ts"])) != db.get_state(con, "last_candle"):
             db.set_state(con, "last_candle", int(last["ts"]))
             if pf.holding and want_sell(last):
                 record(con, pf.sell(price, now, "추세 이탈"))
-            elif not pf.holding and not paused and want_buy(last):
+            elif pf.can_buy(now) and not paused and want_buy(last):
                 record(con, pf.buy(price, now, "상승 추세 진입"))
 
     save_portfolio(con, pf)
@@ -81,6 +81,8 @@ def step(con, pf):
 def main():
     con = db.connect()
     pf = load_portfolio(con)
+    print("최근 시세 불러오는 중...")
+    collect_history(con, WARMUP + 200)      # 꺼져 있던 동안의 캔들을 채움
     print(f"모의투자 시작 ({config.MARKET}, {config.INTERVAL_MIN}분봉). 종료: Ctrl+C")
     while True:
         try:

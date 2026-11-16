@@ -6,21 +6,21 @@ import pandas as pd
 
 import config
 import db
-from strategy import Portfolio, add_indicators, want_buy, want_sell
+from strategy import WARMUP, Portfolio, add_indicators, want_buy, want_sell
 
 
 def run(df):
     df = add_indicators(df)
     pf = Portfolio(config.INITIAL_CASH)
     trades, curve = [], []
-    warmup = config.EMA_SLOW * 3
+    warmup = WARMUP
     for i in range(warmup, len(df)):
         prev, bar = df.iloc[i - 1], df.iloc[i]
         ts = int(bar["ts"])
         # 1) 직전 캔들 신호 → 이번 캔들 시가에 체결
         if pf.holding and want_sell(prev):
             trades.append(pf.sell(bar["open"], ts, "추세 이탈"))
-        elif not pf.holding and want_buy(prev):
+        elif pf.can_buy(ts) and want_buy(prev):
             trades.append(pf.buy(bar["open"], ts, "상승 추세 진입"))
         # 2) 캔들 도중 손절선 터치 확인
         if pf.holding:
@@ -48,6 +48,7 @@ def summarize(trades, curve, df):
         "최대 낙폭(MDD)": mdd,
         "매매 횟수": len(sells),
         "승률": len(wins) / len(sells) if sells else 0,
+        "가장 큰 1회 손실(원)": min([t["pnl"] for t in sells], default=0),
         "총 수수료(원)": sum(t["fee"] for t in trades),
     }
 
@@ -68,7 +69,7 @@ def yearly(curve, df):
 if __name__ == "__main__":
     con = db.connect()
     df = db.load_candles(con)
-    if len(df) < config.EMA_SLOW * 3 + 10:
+    if len(df) < WARMUP + 10:
         raise SystemExit("데이터가 부족합니다. 먼저 'python collector.py'를 실행하세요.")
     trades, curve, used = run(df)
     con.execute("DELETE FROM trades WHERE mode='backtest'")
