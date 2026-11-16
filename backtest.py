@@ -2,6 +2,8 @@
 
 미래 정보를 미리 보지 않도록, 캔들이 끝난 뒤의 신호로 '다음 캔들 시가'에 체결합니다.
 """
+import pandas as pd
+
 import config
 import db
 from strategy import Portfolio, add_indicators, want_buy, want_sell
@@ -50,6 +52,19 @@ def summarize(trades, curve, df):
     }
 
 
+def yearly(curve, df):
+    """연도별 수익률: (연도, 전략, 그냥 보유). 상승장/하락장에서 각각 어땠는지 봅니다."""
+    eq = pd.Series([e for _, e in curve],
+                   index=pd.to_datetime([t for t, _ in curve], unit="s"))
+    px = pd.Series(df["close"].values, index=eq.index)
+    out, prev_e, prev_p = [], config.INITIAL_CASH, df["open"].iloc[0]
+    for year, e in eq.groupby(eq.index.year):
+        p = px[px.index.year == year]
+        out.append((year, e.iloc[-1] / prev_e - 1, p.iloc[-1] / prev_p - 1))
+        prev_e, prev_p = e.iloc[-1], p.iloc[-1]
+    return out
+
+
 if __name__ == "__main__":
     con = db.connect()
     df = db.load_candles(con)
@@ -70,3 +85,6 @@ if __name__ == "__main__":
             print(f"  {k}: {v:,.0f}")
         else:
             print(f"  {k}: {v:+.2%}" if "수익률" in k else f"  {k}: {v:.2%}")
+    print("연도별 수익률 (전략 / 그냥 보유):")
+    for year, a, b in yearly(curve, used):
+        print(f"  {year}: {a:+8.2%} / {b:+8.2%}")
