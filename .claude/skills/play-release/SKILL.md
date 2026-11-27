@@ -6,7 +6,7 @@ description: 사용자의 안드로이드 앱(광고알림 차단 등)을 Google
 # Play 내부 테스트 업로드
 
 ## 사용자 선호 (꼭 지킬 것)
-- **테스터는 항상 Play Console 이메일 목록 `테스터`(12명, 2026-11-27 기준) 하나로 돌린다.** 새 목록을 만들라고 하지 말 것.
+- **테스터: 내부 테스트는 이메일 목록 `테스터`(12명), 비공개 테스트는 구글 그룹 `mytoilet-testers@googlegroups.com`.** 새 목록을 만들라고 하지 말 것. 비공개 테스트 그룹은 `play-upload/listing.json`의 `closedTesting.googleGroups`로 API가 자동 등록.
   새 앱/새 트랙이면: 내부 테스트 → **테스터** 탭 → `테스터` 체크 → 변경사항 저장, 이것만 안내.
 - 설명은 **이 대화창에서 바로**, 단계마다 번호 + 버튼 이름 굵게 + 복사할 주소/글자는 코드블록(회색 상자)으로.
 - 가능한 건 전부 Claude가 직접(터미널/GitHub Actions) 하고, 사용자에게는 구글이 막아둔 것만 요청.
@@ -22,6 +22,7 @@ description: 사용자의 안드로이드 앱(광고알림 차단 등)을 Google
 | GitHub 비밀값 | `PLAY_SA_JSON` (저장소 jonginzz33-code/jonginzz33) |
 | 광고알림 차단 패키지 | `com.jonginzz.adblock` (소스: `ad-blocker-app/`) |
 | 광고알림 차단 테스터 참여 링크 | https://play.google.com/apps/internaltest/4699003768243359180 |
+| 비공개 테스트 테스터 구글 그룹 | `mytoilet-testers@googlegroups.com` (조과일지 등 다른 앱과 공유) |
 
 서비스 계정 권한은 앱별로 줘야 한다. **새 앱은 "관리자(모든 권한)"를 그 앱에만** 주게 안내.
 (초안 앱은 '앱 초안 수정 및 삭제'가 없으면 commit이 403 PERMISSION_DENIED — 2026-11-27 실제로 겪음)
