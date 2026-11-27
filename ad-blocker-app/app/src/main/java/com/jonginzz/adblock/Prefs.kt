@@ -13,6 +13,8 @@ object Prefs {
     private const val K_APPS = "blocked_apps"
     private const val K_LOG = "log"
     private const val K_COUNT = "count"
+    private const val K_UNSEEN = "unseen"
+    private const val K_BADGE = "badge"
     private const val MAX_LOG = 100
 
     /**
@@ -49,8 +51,14 @@ object Prefs {
         sp(c).edit()
             .putString(K_LOG, list.joinToString("\n"))
             .putInt(K_COUNT, count(c) + 1)
+            .putInt(K_UNSEEN, unseen(c) + 1)
             .apply()
     }
+
+    fun unseen(c: Context) = sp(c).getInt(K_UNSEEN, 0)
+    fun resetUnseen(c: Context) = sp(c).edit().putInt(K_UNSEEN, 0).apply()
+    fun badgeEnabled(c: Context) = sp(c).getBoolean(K_BADGE, true)
+    fun setBadgeEnabled(c: Context, v: Boolean) = sp(c).edit().putBoolean(K_BADGE, v).apply()
 
     fun clearLog(c: Context) = sp(c).edit().remove(K_LOG).putInt(K_COUNT, 0).apply()
 }

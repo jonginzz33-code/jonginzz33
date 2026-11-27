@@ -51,6 +51,11 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         ui = Ui(this)
         window.statusBarColor = ui.bg
+        // 안드로이드 13+: 아이콘 숫자 표시용 알림 권한 (한 번만 물어봄)
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
+        }
         if (!ui.dark) window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 
         val root = LinearLayout(this).apply {
@@ -149,6 +154,22 @@ class MainActivity : Activity() {
         settings.addView(settingRow("📵", "앱 통째로 차단", "광고만 보내는 앱의 알림을 모두 지워요", appsValue) {
             startActivity(Intent(this, AppsActivity::class.java))
         })
+        settings.addView(View(this).apply { setBackgroundColor(ui.line) },
+            LinearLayout.LayoutParams(MATCH_PARENT, 1).apply { leftMargin = ui.dp(18); rightMargin = ui.dp(18) })
+        settings.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(ui.dp(18), ui.dp(16), ui.dp(18), ui.dp(16))
+            addView(text("🔴", 22f, ui.text).apply { setPadding(0, 0, ui.dp(14), 0) })
+            addView(vbox().apply {
+                addView(text("아이콘에 지운 개수 표시", 17f, ui.text, bold = true))
+                addView(text("광고를 지우면 앱 아이콘에 숫자가 떠요", 13f, ui.sub))
+            }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+            addView(Switch(this@MainActivity).apply {
+                isChecked = Prefs.badgeEnabled(this@MainActivity)
+                setOnCheckedChangeListener { _, on -> Prefs.setBadgeEnabled(this@MainActivity, on) }
+            })
+        })
         root.addView(settings, block())
 
         // ── 5. 팁 ──
@@ -172,6 +193,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         getSharedPreferences("adblock", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(prefListener)
+        Badge.clear(this)   // 앱을 열었으니 아이콘 숫자 지우기
         refresh()
     }
 

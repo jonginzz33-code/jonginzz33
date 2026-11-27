@@ -56,7 +56,10 @@ class AdBlockService : NotificationListenerService() {
 
         if (appBlocked || isAd) {
             cancelNotification(sbn.key)
-            Prefs.addLog(this, appLabel(sbn.packageName), title.ifEmpty { text }.take(60))
+            // 기록: "제목 · 내용" (무엇 때문에 지웠는지 보이게)
+            val body = listOf(title, text).filter { it.isNotBlank() }.distinct().joinToString(" · ")
+            Prefs.addLog(this, appLabel(sbn.packageName), body.take(90))
+            Badge.update(this)
         }
     }
 
