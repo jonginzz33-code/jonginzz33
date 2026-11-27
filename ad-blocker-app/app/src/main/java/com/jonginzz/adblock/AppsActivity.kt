@@ -103,6 +103,7 @@ class AppsActivity : Activity() {
                 ((view as LinearLayout).getChildAt(2) as Switch).isChecked = pkg in blocked
             }
         }, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
+        ui.fitSystemBars(root)
         setContentView(root)
     }
 

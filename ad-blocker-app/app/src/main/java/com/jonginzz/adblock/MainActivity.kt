@@ -10,6 +10,9 @@ import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
 import android.provider.Settings
 import android.view.Gravity
 import android.view.View
@@ -55,16 +58,36 @@ class MainActivity : Activity() {
             setPadding(ui.dp(16), ui.dp(20), ui.dp(16), ui.dp(32))
         }
 
-        // 제목
-        root.addView(text("광고알림 차단", 26f, ui.text, bold = true).apply {
-            setPadding(ui.dp(4), 0, 0, ui.dp(14))
+        // 제목 줄: [⟳ 새로고침] 광고알림 차단
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, ui.dp(14))
+            addView(TextView(this@MainActivity).apply {
+                text = "⟳"
+                textSize = 24f
+                setTypeface(null, Typeface.BOLD)
+                setTextColor(ui.accent)
+                gravity = Gravity.CENTER
+                contentDescription = "새로고침 및 업데이트 확인"
+                ui.pressable(this, ui.card, 24)
+                setOnClickListener { refreshAndUpdate() }
+            }, LinearLayout.LayoutParams(ui.dp(48), ui.dp(48)))
+            addView(text("광고알림 차단", 26f, ui.text, bold = true).apply {
+                setPadding(ui.dp(12), 0, 0, 0)
+            })
         })
 
         // ── 1. 상태 카드 ──
-        statusCard = vbox().apply { setPadding(ui.dp(22), ui.dp(22), ui.dp(22), ui.dp(18)) }
-        statusIcon = text("", 40f, ui.text)
-        statusTitle = text("", 24f, ui.text, bold = true).apply { setPadding(0, ui.dp(6), 0, 0) }
-        statusCount = text("", 17f, ui.text, bold = true).apply { setPadding(0, ui.dp(8), 0, 0) }
+        statusCard = vbox().apply { setPadding(ui.dp(22), ui.dp(20), ui.dp(22), ui.dp(16)) }
+        statusIcon = text("", 30f, ui.text)
+        statusTitle = text("", 24f, ui.text, bold = true).apply { setPadding(ui.dp(10), 0, 0, 0) }
+        val statusHead = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(statusIcon); addView(statusTitle)
+        }
+        statusCount = text("", 18f, ui.text, bold = true).apply { setPadding(0, ui.dp(12), 0, 0) }
         statusSub = text("", 14f, ui.sub).apply { setPadding(0, ui.dp(2), 0, 0) }
         permBtn = bigButton("알림 접근 권한 허용하기", Color.WHITE, ui.red) {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -78,7 +101,7 @@ class MainActivity : Activity() {
             isChecked = Prefs.isEnabled(this@MainActivity)
             setOnCheckedChangeListener { _, on -> Prefs.setEnabled(this@MainActivity, on); refresh() }
         }
-        listOf(statusIcon, statusTitle, statusCount, statusSub, permBtn, toggle).forEach(statusCard::addView)
+        listOf(statusHead, statusCount, statusSub, permBtn, toggle).forEach(statusCard::addView)
         root.addView(statusCard, block())
 
         // ── 1-2. 꺼지지 않게: 배터리 '제한 없음' 안내 (설정 안 됐을 때만 보임) ──
@@ -139,6 +162,7 @@ class MainActivity : Activity() {
                 14f, ui.sub).apply { setPadding(0, ui.dp(8), 0, 0); setLineSpacing(0f, 1.25f) })
         }, block(top = 20))
 
+        ui.fitSystemBars(root)
         setContentView(ScrollView(this).apply {
             setBackgroundColor(ui.bg)
             addView(root)
@@ -234,6 +258,31 @@ class MainActivity : Activity() {
 
         keywordValue.text = "${Prefs.keywords(this).size}개  ›"
         appsValue.text = "${Prefs.blockedApps(this).size}개  ›"
+    }
+
+    /** 화면 새로고침 + Play 스토어에 새 버전이 있으면 바로 업데이트 */
+    private fun refreshAndUpdate() {
+        refresh()
+        AdBlockService.instance?.sweep()
+        val current = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull() ?: ""
+        val mgr = AppUpdateManagerFactory.create(this)
+        toast("새 버전 확인 중…")
+        mgr.appUpdateInfo
+            .addOnSuccessListener { info ->
+                val avail = info.updateAvailability()
+                if ((avail == UpdateAvailability.UPDATE_AVAILABLE ||
+                        avail == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) &&
+                    info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
+                    @Suppress("DEPRECATION")
+                    mgr.startUpdateFlowForResult(info, AppUpdateType.IMMEDIATE, this, REQ_UPDATE)
+                } else {
+                    toast("최신 버전이에요 ($current)")
+                }
+            }
+            .addOnFailureListener {
+                // Play 스토어로 설치하지 않은 경우 등
+                toast("업데이트 확인 실패 — Play 스토어에서 직접 확인해 주세요")
+            }
     }
 
     /** 배터리 최적화 예외(삼성 '제한 없음')인지 */
@@ -367,5 +416,8 @@ class MainActivity : Activity() {
     /** 이번 실행에서 배터리 안내 창을 이미 띄웠는지 (화면 돌아올 때마다 뜨지 않게) */
     private var askedBattery = false
 
-    companion object { private const val MAX_RECENT = 5 }
+    companion object {
+        private const val MAX_RECENT = 5
+        private const val REQ_UPDATE = 7001
+    }
 }

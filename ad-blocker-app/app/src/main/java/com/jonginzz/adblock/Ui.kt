@@ -6,7 +6,9 @@ import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.content.res.ColorStateList
+import android.os.Build
 import android.view.View
+import android.view.WindowInsets
 
 /** 색·모양 공통 (라이트/다크 자동) */
 class Ui(val c: Context) {
@@ -27,6 +29,29 @@ class Ui(val c: Context) {
     val greyBg = pick("#ECEFF3", "#222831")
     val accent = pick("#2F6BEB", "#5C93FF")
     val tipBg = pick("#FFF6DB", "#2E2814")
+
+    /**
+     * 안드로이드 15+ 는 화면을 상태바 밑까지 그린다(edge-to-edge).
+     * 상태바·내비게이션바 높이만큼 안쪽 여백을 더해 글자가 겹치지 않게 한다.
+     */
+    fun fitSystemBars(v: View) {
+        val l = v.paddingLeft; val t = v.paddingTop; val r = v.paddingRight; val b = v.paddingBottom
+        v.setOnApplyWindowInsetsListener { view, insets ->
+            val top: Int; val bottom: Int
+            if (Build.VERSION.SDK_INT >= 30) {
+                val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+                top = bars.top; bottom = bars.bottom
+            } else {
+                @Suppress("DEPRECATION")
+                top = insets.systemWindowInsetTop
+                @Suppress("DEPRECATION")
+                bottom = insets.systemWindowInsetBottom
+            }
+            view.setPadding(l, t + top, r, b + bottom)
+            insets
+        }
+        v.requestApplyInsets()
+    }
 
     fun dp(v: Int) = (v * c.resources.displayMetrics.density).toInt()
 

@@ -19,8 +19,8 @@ android {
         applicationId = "com.jonginzz.adblock"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = 5
+        versionName = "1.0.4"
     }
     signingConfigs {
         if (keyProps.isNotEmpty()) create("release") {
@@ -47,5 +47,6 @@ android {
 kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
 dependencies {
+    implementation("com.google.android.play:app-update:2.1.0")
     testImplementation("junit:junit:4.13.2")
 }
