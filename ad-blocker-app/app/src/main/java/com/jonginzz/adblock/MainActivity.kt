@@ -7,7 +7,9 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.Gravity
 import android.view.View
@@ -34,6 +36,7 @@ class MainActivity : Activity() {
     private lateinit var permBtn: TextView
     private lateinit var toggle: Switch
     private lateinit var recentBox: LinearLayout
+    private lateinit var batteryCard: LinearLayout
     private lateinit var keywordValue: TextView
     private lateinit var appsValue: TextView
 
@@ -77,6 +80,20 @@ class MainActivity : Activity() {
         }
         listOf(statusIcon, statusTitle, statusCount, statusSub, permBtn, toggle).forEach(statusCard::addView)
         root.addView(statusCard, block())
+
+        // ── 1-2. 꺼지지 않게: 배터리 '제한 없음' 안내 (설정 안 됐을 때만 보임) ──
+        batteryCard = vbox().apply {
+            background = ui.round(ui.tipBg)
+            setPadding(ui.dp(20), ui.dp(18), ui.dp(20), ui.dp(18))
+            addView(text("🔋 꺼지지 않게 한 번만 설정해 주세요", 17f, ui.text, bold = true))
+            addView(text(
+                "삼성폰은 배터리 절약 때문에 이 앱을 가끔 잠재워요.\n" +
+                "아래 버튼 → '배터리' → '제한 없음'을 고르고 돌아오세요.\n" +
+                "알림이 올 때만 잠깐 일해서 배터리는 거의 안 써요.",
+                14f, ui.sub).apply { setPadding(0, ui.dp(8), 0, ui.dp(12)); setLineSpacing(0f, 1.25f) })
+            addView(bigButton("배터리 설정 열기", Color.WHITE, ui.accent) { openBatterySettings() })
+        }
+        root.addView(batteryCard, block(top = 12))
 
         // ── 2. 지금 지우기 버튼 ──
         root.addView(bigButton("🧹  알림창 광고 지금 지우기", Color.WHITE, ui.accent) {
@@ -173,6 +190,18 @@ class MainActivity : Activity() {
             }
         }
         permBtn.visibility = if (ok) View.GONE else View.VISIBLE
+        val needBattery = ok && !isBatteryUnrestricted()
+        batteryCard.visibility = if (needBattery) View.VISIBLE else View.GONE
+        if (needBattery && !askedBattery) {
+            askedBattery = true
+            AlertDialog.Builder(this)
+                .setTitle("🔋 한 가지만 더 설정해 주세요")
+                .setMessage("삼성폰은 배터리 절약 때문에 이 앱을 가끔 잠재워서 광고가 안 지워질 수 있어요.\n\n" +
+                    "다음 화면에서 '배터리' → '제한 없음'을 고르고 뒤로 돌아오면 끝이에요.")
+                .setPositiveButton("설정하러 가기") { _, _ -> openBatterySettings() }
+                .setNegativeButton("나중에", null)
+                .show()
+        }
         toggle.visibility = if (ok) View.VISIBLE else View.GONE
         if (toggle.isChecked != on) toggle.isChecked = on
 
@@ -205,6 +234,16 @@ class MainActivity : Activity() {
 
         keywordValue.text = "${Prefs.keywords(this).size}개  ›"
         appsValue.text = "${Prefs.blockedApps(this).size}개  ›"
+    }
+
+    /** 배터리 최적화 예외(삼성 '제한 없음')인지 */
+    private fun isBatteryUnrestricted(): Boolean =
+        (getSystemService(POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(packageName)
+
+    /** 이 앱의 '애플리케이션 정보' 화면을 연다. 거기서 배터리 → 제한 없음 */
+    private fun openBatterySettings() {
+        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+        toast("'배터리' → '제한 없음'을 골라 주세요")
     }
 
     private fun hasPermission(): Boolean {
@@ -324,6 +363,9 @@ class MainActivity : Activity() {
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+
+    /** 이번 실행에서 배터리 안내 창을 이미 띄웠는지 (화면 돌아올 때마다 뜨지 않게) */
+    private var askedBattery = false
 
     companion object { private const val MAX_RECENT = 5 }
 }
