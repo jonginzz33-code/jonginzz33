@@ -50,3 +50,7 @@ description: 사용자의 안드로이드 앱(광고알림 차단 등)을 Google
 - 심사 전(초안) 앱: 비공개 테스트(alpha)는 API로 **draft**만 가능 → 사용자가 Console 비공개 테스트에서 '검토 → 출시'(앱 콘텐츠 설문 완료 필요).
   내부 테스트는 completed 유지. 트랙 PUT은 기존 출시를 덮어쓰므로 내부 트랙을 draft로 올리지 말 것(2026-11-27 실수 후 수정).
 - 비공개 테스트 참여 링크(구글 그룹 회원용): https://play.google.com/apps/testing/com.jonginzz.adblock
+- 스토어 스크린샷: `.github/workflows/store-screenshots.yml`이 Robolectric(`StoreScreenshotTest`)으로 실제 화면을
+  `store-assets/raw/`에 렌더링해 커밋 → 스크래치패드의 Playwright 프레임(파란 배경+캡션, 1080x1920)으로 합성해
+  `play-upload/screenshots/`에 넣으면 업로드 워크플로가 올림. 이 컨테이너에선 Maven Central이 429를 줘서
+  Robolectric 테스트는 CI에서만 돌릴 것(로컬은 `bundleRelease`만).
