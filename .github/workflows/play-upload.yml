@@ -1,0 +1,22 @@
+name: Play 내부 테스트 업로드
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "play-upload/**"
+      - "tools/play_upload.py"
+      - ".github/workflows/play-upload.yml"
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install google-auth requests
+      - run: python tools/play_upload.py
+        env:
+          PLAY_SA_JSON: ${{ secrets.PLAY_SA_JSON }}
