@@ -21,6 +21,7 @@ description: 사용자의 안드로이드 앱(광고알림 차단 등)을 Google
 | 업로드 서비스 계정 | `play-upload@adblock-upload.iam.gserviceaccount.com` (GCP 프로젝트 adblock-upload) |
 | GitHub 비밀값 | `PLAY_SA_JSON` (저장소 jonginzz33-code/jonginzz33) |
 | 광고알림 차단 패키지 | `com.jonginzz.adblock` (소스: `ad-blocker-app/`) |
+| 광고알림 차단 테스터 참여 링크 | https://play.google.com/apps/internaltest/4699003768243359180 |
 
 서비스 계정 권한은 앱별로 줘야 한다. **새 앱은 "관리자(모든 권한)"를 그 앱에만** 주게 안내.
 (초안 앱은 '앱 초안 수정 및 삭제'가 없으면 commit이 403 PERMISSION_DENIED — 2026-11-27 실제로 겪음)
