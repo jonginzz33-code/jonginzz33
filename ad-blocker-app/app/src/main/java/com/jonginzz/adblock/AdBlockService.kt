@@ -44,15 +44,14 @@ class AdBlockService : NotificationListenerService() {
         val isAd = !appBlocked && run {
             // 진행 중 알림(음악, 통화 등)은 키워드 검사 대상에서 제외
             if (sbn.isOngoing) return@run false
-            val all = listOf(
+            AdMatcher.isAd(listOf(
                 title, text,
                 ex.getCharSequence(Notification.EXTRA_BIG_TEXT),
                 ex.getCharSequence(Notification.EXTRA_SUB_TEXT),
                 ex.getCharSequence(Notification.EXTRA_SUMMARY_TEXT),
                 ex.getCharSequence(Notification.EXTRA_TITLE_BIG),
                 n.tickerText,
-            ).joinToString(" ") { it?.toString().orEmpty() }.noSpace()
-            Prefs.keywords(this).any { kw -> all.contains(kw.noSpace(), ignoreCase = true) }
+            ), Prefs.keywords(this))
         }
 
         if (appBlocked || isAd) {
@@ -65,8 +64,6 @@ class AdBlockService : NotificationListenerService() {
         val pm = packageManager
         pm.getApplicationLabel(pm.getApplicationInfo(pkg, PackageManager.GET_META_DATA)).toString()
     } catch (_: Exception) { pkg }
-
-    private fun String.noSpace() = replace(Regex("\\s+"), "")
 
     companion object {
         @Volatile var instance: AdBlockService? = null
