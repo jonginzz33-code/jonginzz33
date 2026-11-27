@@ -47,3 +47,6 @@ description: 사용자의 안드로이드 앱(광고알림 차단 등)을 Google
 ## 참고
 - 집 PC(DESKTOP-F33UIDP)는 클라우드 세션에서 Remote Control 폴더가 not_available로 연결 안 됨(원인 미상, 앱은 최신).
 - 등록 안내 문서: https://claude.ai/artifact/8Kgh2hQFLvwbSkNty5Tkwy
+- 심사 전(초안) 앱: 비공개 테스트(alpha)는 API로 **draft**만 가능 → 사용자가 Console 비공개 테스트에서 '검토 → 출시'(앱 콘텐츠 설문 완료 필요).
+  내부 테스트는 completed 유지. 트랙 PUT은 기존 출시를 덮어쓰므로 내부 트랙을 draft로 올리지 말 것(2026-11-27 실수 후 수정).
+- 비공개 테스트 참여 링크(구글 그룹 회원용): https://play.google.com/apps/testing/com.jonginzz.adblock
