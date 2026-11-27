@@ -37,5 +37,7 @@ adb exec-out screencap -p > $OUT/1-notification-shade.png
 adb shell cmd statusbar collapse; sleep 1
 adb shell am start -n $PKG/.MainActivity; sleep 3
 adb exec-out screencap -p > $OUT/2-app.png
-rm -f $OUT/dump.txt
 [ "$(has ad1)" = 지워짐 ] && [ "$(has ad2)" = 지워짐 ] && [ "$(has chat1)" = 남아있음 ] && [ "$(has news1)" = 남아있음 ]
+ok=$?
+rm -f $OUT/dump.txt
+exit $ok
