@@ -86,8 +86,10 @@ def run(s, status):
     # 비공개 테스트(alpha) + 구글 그룹 테스터 (listing.json 의 closedTesting 이 있을 때만)
     closed = listing.get("closedTesting") or {}
     if closed.get("googleGroups"):
-        print("비공개 테스트 트랙:", status, closed["googleGroups"])
-        ok(s.put(f"{API}/{edit}/tracks/alpha", json={"track": "alpha", "releases": [release]}))
+        # 심사 전 앱의 비공개 테스트는 초안으로만 만들 수 있다 → Console에서 '검토를 위해 전송'
+        closed_release = dict(release, status="draft")
+        print("비공개 테스트 트랙: draft", closed["googleGroups"])
+        ok(s.put(f"{API}/{edit}/tracks/alpha", json={"track": "alpha", "releases": [closed_release]}))
         ok(s.put(f"{API}/{edit}/testers/alpha", json={"googleGroups": closed["googleGroups"]}))
     ok(s.post(f"{API}/{edit}:commit"))
     print(f"✓ 완료 (status={status})")
