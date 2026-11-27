@@ -46,8 +46,15 @@ def run(s, status):
     aab = sorted(glob.glob(f"{DIR}/*.aab"))[-1]
     print("AAB 업로드:", aab)
     with open(aab, "rb") as f:
-        vc = ok(s.post(f"{UP}/{edit}/bundles?uploadType=media", data=f,
-                       headers={"Content-Type": "application/octet-stream"}, timeout=600))["versionCode"]
+        r = s.post(f"{UP}/{edit}/bundles?uploadType=media", data=f,
+                   headers={"Content-Type": "application/octet-stream"}, timeout=600)
+    if r.status_code >= 400 and "already been used" in r.text:
+        # 같은 버전을 이미 올린 경우: 기존 번들 중 가장 높은 버전을 그대로 사용
+        bundles = ok(s.get(f"{API}/{edit}/bundles")).get("bundles", [])
+        vc = max(b["versionCode"] for b in bundles)
+        print("이미 올라간 버전이라 재사용")
+    else:
+        vc = ok(r)["versionCode"]
     print("versionCode", vc)
 
     print("스토어 등록정보 글")
@@ -71,10 +78,17 @@ def run(s, status):
                           headers={"Content-Type": ctype}))
         print(f"  {kind}: {len(files)}장")
 
+    release = {"versionCodes": [str(vc)], "status": status,
+               "releaseNotes": [{"language": lang, "text": listing["releaseNotes"]}]}
     print("내부 테스트 트랙:", status)
-    ok(s.put(f"{API}/{edit}/tracks/internal", json={"track": "internal", "releases": [{
-        "versionCodes": [str(vc)], "status": status,
-        "releaseNotes": [{"language": lang, "text": listing["releaseNotes"]}]}]}))
+    ok(s.put(f"{API}/{edit}/tracks/internal", json={"track": "internal", "releases": [release]}))
+
+    # 비공개 테스트(alpha) + 구글 그룹 테스터 (listing.json 의 closedTesting 이 있을 때만)
+    closed = listing.get("closedTesting") or {}
+    if closed.get("googleGroups"):
+        print("비공개 테스트 트랙:", status, closed["googleGroups"])
+        ok(s.put(f"{API}/{edit}/tracks/alpha", json={"track": "alpha", "releases": [release]}))
+        ok(s.put(f"{API}/{edit}/testers/alpha", json={"googleGroups": closed["googleGroups"]}))
     ok(s.post(f"{API}/{edit}:commit"))
     print(f"✓ 완료 (status={status})")
 
