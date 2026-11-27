@@ -6,6 +6,7 @@ on:
     paths:
       - "play-upload/**"
       - "tools/play_upload.py"
+      - "play-upload/.retry"
       - ".github/workflows/play-upload.yml"
 
 jobs:

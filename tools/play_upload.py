@@ -84,14 +84,11 @@ def main():
     try:
         run(s, "completed")
     except RuntimeError as e:
-        # 한 번도 출시 안 된 새 앱은 'draft'로만 만들 수 있다 → Play Console에서 '출시' 한 번 눌러야 함
+        # 한 번도 출시 안 된 새 앱은 'draft'로만 만들 수 있다 → Play Console에서 '출시' 한 번 눌러야 함.
         # 403 PERMISSION_DENIED 로 오는 경우도 있어 오류가 나면 초안으로 한 번 더 시도
         print(f"completed 실패 → 초안(draft)으로 다시 올립니다.\n{e}")
-        if True:
-            run(s, "draft")
-            print("::notice::Play Console → 내부 테스트 → 초안 버전에서 '출시 검토 → 출시 시작'을 눌러 주세요.")
-        else:
-            raise
+        run(s, "draft")
+        print("::notice::Play Console → 내부 테스트 → 초안 버전에서 '출시 검토 → 출시 시작'을 눌러 주세요.")
 
 
 if __name__ == "__main__":
