@@ -79,6 +79,28 @@ def run(s, status):
     print(f"✓ 완료 (status={status})")
 
 
+def diagnose(s):
+    """어느 권한이 막혔는지: 글만 저장 / 앱 파일만 저장 각각 시도"""
+    listing = json.load(open(f"{DIR}/listing.json", encoding="utf-8"))
+    lang = listing["language"]
+    for name in ("글만", "검증만"):
+        edit = ok(s.post(API))["id"]
+        try:
+            if name == "글만":
+                ok(s.put(f"{API}/{edit}/listings/{lang}", json={
+                    "language": lang, "title": listing["title"],
+                    "shortDescription": listing["shortDescription"],
+                    "fullDescription": listing["fullDescription"]}))
+                ok(s.post(f"{API}/{edit}:commit"))
+            else:
+                ok(s.post(f"{API}/{edit}:validate"))
+            print(f"진단 [{name}]: 성공")
+        except RuntimeError as e:
+            print(f"진단 [{name}]: 실패 {str(e).splitlines()[0]}")
+    r = s.get(f"{API}/{ok(s.post(API))['id']}/tracks")
+    print("진단 [트랙 목록]:", r.status_code, r.text[:300])
+
+
 def main():
     s = session()
     try:
@@ -87,7 +109,11 @@ def main():
         # 한 번도 출시 안 된 새 앱은 'draft'로만 만들 수 있다 → Play Console에서 '출시' 한 번 눌러야 함.
         # 403 PERMISSION_DENIED 로 오는 경우도 있어 오류가 나면 초안으로 한 번 더 시도
         print(f"completed 실패 → 초안(draft)으로 다시 올립니다.\n{e}")
-        run(s, "draft")
+        try:
+            run(s, "draft")
+        except RuntimeError as e2:
+            diagnose(s)
+            raise e2
         print("::notice::Play Console → 내부 테스트 → 초안 버전에서 '출시 검토 → 출시 시작'을 눌러 주세요.")
 
 
