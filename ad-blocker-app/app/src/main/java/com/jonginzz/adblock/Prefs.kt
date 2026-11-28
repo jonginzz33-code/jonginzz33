@@ -62,7 +62,7 @@ object Prefs {
 
     fun unseen(c: Context) = sp(c).getInt(K_UNSEEN, 0)
     fun resetUnseen(c: Context) = sp(c).edit().putInt(K_UNSEEN, 0).apply()
-    fun badgeEnabled(c: Context) = sp(c).getBoolean(K_BADGE, true)
+    fun badgeEnabled(c: Context) = sp(c).getBoolean(K_BADGE, false)
     fun setBadgeEnabled(c: Context, v: Boolean) = sp(c).edit().putBoolean(K_BADGE, v).apply()
 
     fun clearLog(c: Context) = sp(c).edit().remove(K_LOG).putInt(K_COUNT, 0).apply()

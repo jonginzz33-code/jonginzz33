@@ -52,11 +52,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         ui = Ui(this)
         window.statusBarColor = ui.bg
-        // 안드로이드 13+: 아이콘 숫자 표시용 알림 권한 (한 번만 물어봄)
-        if (android.os.Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
-        }
+        
         if (!ui.dark) window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 
         val root = LinearLayout(this).apply {
@@ -171,11 +167,19 @@ class MainActivity : Activity() {
             addView(text("🔴", 22f, ui.text).apply { setPadding(0, 0, ui.dp(14), 0) })
             addView(vbox().apply {
                 addView(text("아이콘에 지운 개수 표시", 17f, ui.text, bold = true))
-                addView(text("광고를 지우면 앱 아이콘에 숫자가 떠요", 13f, ui.sub))
+                addView(text("켜면 알림창에 조용한 알림이 생기고 아이콘에 숫자가 떠요", 13f, ui.sub))
             }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
             addView(Switch(this@MainActivity).apply {
                 isChecked = Prefs.badgeEnabled(this@MainActivity)
-                setOnCheckedChangeListener { _, on -> Prefs.setBadgeEnabled(this@MainActivity, on) }
+                setOnCheckedChangeListener { _, on ->
+                    Prefs.setBadgeEnabled(this@MainActivity, on)
+                    if (!on) Badge.clear(this@MainActivity)
+                    else if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                        checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                        android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
+                    }
+                }
             })
         })
         root.addView(settings, block())
