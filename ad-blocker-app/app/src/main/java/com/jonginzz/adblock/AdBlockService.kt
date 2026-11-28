@@ -34,6 +34,7 @@ class AdBlockService : NotificationListenerService() {
     private fun check(sbn: StatusBarNotification) {
         if (!Prefs.isEnabled(this)) return
         if (sbn.packageName == packageName) return
+        if (sbn.packageName in Prefs.allowedApps(this)) return   // 예외 앱은 건드리지 않음
 
         val n = sbn.notification
         val ex = n.extras

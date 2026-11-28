@@ -20,8 +20,29 @@ import android.widget.ListView
 import android.widget.Switch
 import android.widget.TextView
 
-/** 앱 목록에서 켠 앱은 모든 알림을 즉시 삭제 */
+/**
+ * 앱 목록 화면. 두 가지 모드:
+ *  - 차단(기본): 켠 앱의 알림은 모두 즉시 삭제
+ *  - 예외(MODE_ALLOW): 켠 앱의 알림은 광고 키워드가 있어도 절대 지우지 않음
+ */
 class AppsActivity : Activity() {
+
+    companion object {
+        const val EXTRA_MODE = "mode"
+        const val MODE_ALLOW = "allow"
+    }
+
+    private val allowMode by lazy { intent.getStringExtra(EXTRA_MODE) == MODE_ALLOW }
+    private fun load() = if (allowMode) Prefs.allowedApps(this) else Prefs.blockedApps(this)
+    private fun save(s: Set<String>) {
+        if (allowMode) {
+            Prefs.setAllowedApps(this, s)
+            Prefs.setBlockedApps(this, Prefs.blockedApps(this) - s)   // 둘 다 켜지지 않게
+        } else {
+            Prefs.setBlockedApps(this, s)
+            Prefs.setAllowedApps(this, Prefs.allowedApps(this) - s)
+        }
+    }
 
     private class App(val pkg: String, val label: String) { var icon: Drawable? = null }
 
@@ -38,7 +59,7 @@ class AppsActivity : Activity() {
         if (!ui.dark) window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 
         val pm = packageManager
-        blocked += Prefs.blockedApps(this)
+        blocked += load()
         val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         all = pm.queryIntentActivities(launcher, 0)
             .map { App(it.activityInfo.packageName, it.loadLabel(pm).toString()) }
@@ -53,10 +74,11 @@ class AppsActivity : Activity() {
             setPadding(ui.dp(16), ui.dp(20), ui.dp(16), 0)
         }
         root.addView(TextView(this).apply {
-            text = "앱 통째로 차단"; textSize = 24f; setTypeface(null, Typeface.BOLD); setTextColor(ui.text)
+            text = if (allowMode) "예외 앱" else "앱 통째로 차단"; textSize = 24f; setTypeface(null, Typeface.BOLD); setTextColor(ui.text)
         })
         root.addView(TextView(this).apply {
-            text = "켠 앱의 알림은 광고가 아니어도 모두 지워요."
+            text = if (allowMode) "켠 앱의 알림은 '(광고)'가 있어도 절대 지우지 않아요."
+                   else "켠 앱의 알림은 광고가 아니어도 모두 지워요."
             textSize = 14f; setTextColor(ui.sub); setPadding(0, ui.dp(4), 0, ui.dp(12))
         })
         root.addView(EditText(this).apply {
@@ -99,7 +121,7 @@ class AppsActivity : Activity() {
             setOnItemClickListener { _, view, pos, _ ->
                 val pkg = shown[pos].pkg
                 if (!blocked.add(pkg)) blocked.remove(pkg)
-                Prefs.setBlockedApps(this@AppsActivity, blocked)
+                save(blocked)
                 ((view as LinearLayout).getChildAt(2) as Switch).isChecked = pkg in blocked
             }
         }, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))

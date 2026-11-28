@@ -11,6 +11,7 @@ object Prefs {
     private const val K_ENABLED = "enabled"
     private const val K_KEYWORDS = "keywords"
     private const val K_APPS = "blocked_apps"
+    private const val K_ALLOW = "allowed_apps"
     private const val K_LOG = "log"
     private const val K_COUNT = "count"
     private const val K_UNSEEN = "unseen"
@@ -37,6 +38,10 @@ object Prefs {
 
     fun blockedApps(c: Context): Set<String> = sp(c).getStringSet(K_APPS, emptySet())!!.toSet()
     fun setBlockedApps(c: Context, s: Set<String>) = sp(c).edit().putStringSet(K_APPS, s).apply()
+
+    /** 예외 앱: 광고 키워드가 있어도 절대 지우지 않음 */
+    fun allowedApps(c: Context): Set<String> = sp(c).getStringSet(K_ALLOW, emptySet())!!.toSet()
+    fun setAllowedApps(c: Context, s: Set<String>) = sp(c).edit().putStringSet(K_ALLOW, s).apply()
 
     fun count(c: Context) = sp(c).getInt(K_COUNT, 0)
 

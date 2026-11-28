@@ -42,6 +42,7 @@ class MainActivity : Activity() {
     private lateinit var batteryCard: LinearLayout
     private lateinit var keywordValue: TextView
     private lateinit var appsValue: TextView
+    private lateinit var allowValue: TextView
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
         runOnUiThread { refresh() }
@@ -154,6 +155,13 @@ class MainActivity : Activity() {
         settings.addView(settingRow("📵", "앱 통째로 차단", "광고만 보내는 앱의 알림을 모두 지워요", appsValue) {
             startActivity(Intent(this, AppsActivity::class.java))
         })
+        allowValue = text("", 15f, ui.sub)
+        settings.addView(View(this).apply { setBackgroundColor(ui.line) },
+            LinearLayout.LayoutParams(MATCH_PARENT, 1).apply { leftMargin = ui.dp(18); rightMargin = ui.dp(18) })
+        settings.addView(settingRow("✅", "예외 앱", "이 앱의 알림은 절대 지우지 않아요", allowValue) {
+            startActivity(Intent(this, AppsActivity::class.java)
+                .putExtra(AppsActivity.EXTRA_MODE, AppsActivity.MODE_ALLOW))
+        })
         settings.addView(View(this).apply { setBackgroundColor(ui.line) },
             LinearLayout.LayoutParams(MATCH_PARENT, 1).apply { leftMargin = ui.dp(18); rightMargin = ui.dp(18) })
         settings.addView(LinearLayout(this).apply {
@@ -183,11 +191,14 @@ class MainActivity : Activity() {
                 14f, ui.sub).apply { setPadding(0, ui.dp(8), 0, 0); setLineSpacing(0f, 1.25f) })
         }, block(top = 20))
 
-        ui.fitSystemBars(root)
-        setContentView(ScrollView(this).apply {
+        // 상태바 여백은 스크롤 바깥(ScrollView)에 줘야 내려도 글자가 시계 밑으로 안 들어감
+        val scroll = ScrollView(this).apply {
             setBackgroundColor(ui.bg)
+            clipToPadding = true
             addView(root)
-        })
+        }
+        ui.fitSystemBars(scroll)
+        setContentView(scroll)
     }
 
     override fun onResume() {
@@ -280,6 +291,7 @@ class MainActivity : Activity() {
 
         keywordValue.text = "${Prefs.keywords(this).size}개  ›"
         appsValue.text = "${Prefs.blockedApps(this).size}개  ›"
+        allowValue.text = "${Prefs.allowedApps(this).size}개  ›"
     }
 
     /** 화면 새로고침 + Play 스토어에 새 버전이 있으면 바로 업데이트 */
